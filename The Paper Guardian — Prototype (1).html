@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Paper Guardian — Prototype</title>
+<style>
+:root{--bg:#f7f1e3;--card:#fffdf8;--ink:#2b2a28;--mute:#6b665c;--teal:#2a9d8f;--sky:#cfe8f1;--wine:#7b2d3b;--amber:#b7791f;--ok:#2f7d4f;--line:#e6dcc6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1b17;--card:#27241f;--ink:#f3ecdc;--mute:#b5ad9c;--sky:#23424d;--line:#3a352c;--teal:#4cc3b3;--wine:#e08a9a;--amber:#e3b25a;--ok:#6fcf97}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:18px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
+@media(max-width:800px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+h1{margin:0;font-size:28px}h2{margin:0 0 8px;font-size:20px}
+.tag{display:inline-block;font-size:13px;padding:2px 10px;border-radius:99px;background:var(--sky);color:var(--ink);margin:2px 4px 2px 0}
+.tag.sim{background:#f3d9a4;color:#4a3300}
+.orb{width:150px;height:150px;border-radius:50%;margin:10px auto;background:radial-gradient(circle at 35% 30%,#fff8,var(--teal));display:flex;align-items:center;justify-content:center;font-size:54px;transition:.4s}
+.orb.listening{animation:pulse 1.6s infinite}.orb.processing{animation:spin 1.4s linear infinite;background:conic-gradient(var(--teal),var(--sky),var(--teal))}
+.orb.speaking{animation:pulse .9s infinite;background:radial-gradient(circle at 35% 30%,#fff8,var(--wine))}
+@keyframes pulse{50%{transform:scale(1.1);box-shadow:0 0 0 22px #2a9d8f22}}@keyframes spin{to{transform:rotate(360deg)}}
+.state{text-align:center;font-size:22px;font-weight:600;min-height:34px}
+.say{direction:rtl;text-align:center;font-size:24px;min-height:70px;padding:8px;border-radius:14px;background:var(--sky)}
+.sub{text-align:center;color:var(--mute);font-size:14px;min-height:20px}
+.paper{background:#fff;color:#222;border:1px solid #cfc6b0;border-radius:8px;padding:16px;font-family:Georgia,serif;font-size:15px;min-height:200px;white-space:pre-wrap;position:relative}
+.paper.blur{filter:blur(2px)}.paper mark{background:#f6c9d0;padding:0 2px}
+video,canvas.cap{width:100%;border-radius:10px;background:#000;max-height:260px}
+button{font:inherit;border:0;border-radius:12px;padding:10px 16px;background:var(--teal);color:#fff;cursor:pointer;margin:3px 3px 3px 0}
+button.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.res{border-left:8px solid var(--mute);border-radius:12px;padding:12px 14px;margin-top:10px;background:var(--bg)}
+.res.concern{border-color:var(--wine)}.res.review{border-color:var(--amber)}.res.ok{border-color:var(--ok)}
+.res b.s{display:block;font-size:20px}
+ul{margin:6px 0;padding-left:20px}
+.wa{background:#e7ffdb;color:#1b2b17;border-radius:14px;padding:12px;margin-top:10px;font-size:15px;border:1px solid #b7e4a5}
+.wa img{max-width:100%;border-radius:8px}
+details{margin-top:10px}pre{background:#0002;padding:10px;border-radius:10px;overflow-x:auto;font-size:13px}
+.disc{font-size:14px;color:var(--mute);margin-top:10px}
+</style>
+</head>
+<body>
+<div style="max-width:1100px;margin:0 auto;padding:16px 16px 0"><div class="card" style="font-size:15px;border-style:dashed">
+  <b>Panneau présentateur</b> <span class="tag sim">Réservé à la démo : la personne âgée ne touche jamais à l’écran</span>
+  <div>État : <b id="state">Prêt à écouter</b> · <span id="sub" class="sub" style="display:inline"></span></div>
+  <button onclick="start()">▶ Simuler le mot d’activation</button>
+  <button class="alt" onclick="micTest()">🎤 Test micro réel (reconnaissance navigateur)</button>
+  <label>Scénario :
+    <select id="scn" style="font:inherit;padding:6px;border-radius:8px">
+      <option value="0">1 : Document administratif simple</option>
+      <option value="1" selected>2 : Terrain (clause risquée)</option>
+      <option value="2">3 : Incomplet / illisible</option>
+    </select></label>
+  <div class="disc">Écoute permanente impossible dans un navigateur : l’activation est simulée. Assistant de prévention, pas un avocat ; toujours faire vérifier un document avant une signature importante.</div>
+</div></div>
+<div class="wrap">
+<section class="card" id="elder">
+  <h1>🛡️ The Paper Guardian <span style="font-family:inherit;direction:rtl">· حارس الورقة</span></h1>
+  <div class="orb" id="orb">🎙️</div>
+  <div class="say" id="say">يا حارس الورقة…</div>
+  <div id="count" style="text-align:center;font-size:90px;min-height:100px;color:var(--teal)"></div>
+</section>
+
+<section class="card">
+  <h2>Document capturé</h2>
+  <div id="docbox"><div class="paper" id="paper" style="color:#999">Aucun document pour l’instant.</div></div>
+  <div id="result"></div>
+  <div id="wa"></div>
+  <details>
+    <summary><b>Zone technique (développeur)</b></summary>
+    <p><span class="tag sim">SIMULÉ</span> Analyse et voix de cette page : jeux de données fictifs, aucun appel API. Voix = synthèse du navigateur (remplace ElevenLabs), micro = reconnaissance navigateur (remplace Whisper).</p>
+    <button class="alt" id="camtog" onclick="toggleCam()">Caméra réelle : désactivée</button> <small>(si activée : compte à rebours, capture automatique, reprise à la voix « عاود »)</small>
+    <pre>Variables côté serveur (Supabase Edge Functions / n8n), jamais dans le frontend :
+OPENAI_API_KEY=        # Whisper + vision
+ALLAM_API_KEY=         # reformulation arabe
+ELEVENLABS_API_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+WHATSAPP_TOKEN=  WHATSAPP_PHONE_ID=
+N8N_WEBHOOK_URL=
+
+Flux : tablette → Edge Function /transcribe (Whisper)
+→ /analyze (vision, JSON strict) → ALLaM (Derja) → /speak (ElevenLabs)
+→ webhook n8n → WhatsApp (si statut ≠ No Concern et partage autorisé)</pre>
+    <div id="log" class="sub" style="text-align:left"></div>
+  </details>
+</section>
+</div>
+
+<script>
+const DOCS=[
+{title:"Attestation de résidence",
+ text:"RÉPUBLIQUE TUNISIENNE\nAttestation de résidence\n\nNous soussignés, Délégation de Sfax Sud, attestons que Mme Fatma Ben Salah, née en 1948, réside à l’adresse : 12 rue des Jasmins, Sfax.\n\nDélivrée le 02/10/2026 pour servir et valoir ce que de droit.\n(Document FICTIF)",
+ status:"ok",label:"No Concern Detected",
+ why:["Type : attestation de résidence, informations générales.","Aucune obligation, aucun transfert de droits dans les parties lisibles."],
+ say:"الورقة هاذي شهادة سكنى، تثبت وين تسكني. ما لقيتش فيها حاجة تخوّف في الجزء اللي نجمت نقراه، أما هاذا ماهوش ضمان. قبل ما تمضي أي حاجة مهمة، ورّيها لشخص تثقي فيه.",
+ sum:"Attestation de résidence au nom de Fatma Ben Salah. Rien de préoccupant dans les informations lisibles (pas une garantie).",alert:false},
+{title:"Acte — terrain familial",
+ text:"PROJET D’ACTE\nTerrain « El Ghorfa », 1 200 m², Nabeul, titre n° 45812\n\nArt. 1 — Mme Fatma Ben Salah est propriétaire de 1/3 indivis.\nArt. 2 — <mark>Mme Fatma Ben Salah renonce définitivement et sans contrepartie à tous ses droits sur ledit terrain au profit de M. Karim Ben Salah.</mark>\nArt. 3 — Signature à effectuer avant le 30/11/2026.\n(Document FICTIF)",
+ status:"concern",label:"Potential Concern",
+ why:["Art. 2 : renonciation définitive à tous les droits, sans contrepartie → à faire vérifier par un humain.","Art. 3 : date limite de signature proche, pression possible.","Type : acte de propriété. Parties : Fatma et Karim Ben Salah."],
+ say:"الورقة هاذي تتعلّق بملكية الأرض. فيها فقرة تحكي على التنازل عن كل حقوقك في الأرض من غير مقابل. ما تمضيش توّا، يلزم شخص تثقي فيه أو مختص قانوني يراجعها معاك.",
+ sum:"Acte sur le terrain « El Ghorfa » : l’art. 2 prévoit une renonciation totale aux droits, sans contrepartie, et l’art. 3 fixe une échéance au 30/11/2026. Merci de la contacter et de faire vérifier le document avant toute signature.",alert:true},
+{title:"Document incomplet",
+ text:"CONTRAT ###\nEntre ▒▒▒▒▒▒ et ▒▒▒▒▒▒\nobjet : ▒▒▒▒▒ ▒▒▒▒\nMontant : ____ dinars\n[page 2 manquante]\n(Document FICTIF, image dégradée)",
+ status:"review",label:"Needs Review",blur:true,
+ why:["Parties et objet illisibles.","Montant absent, page 2 manquante.","Impossible de conclure : je n’invente rien."],
+ say:"ما نجمش نتأكد من محتوى الورقة. من الأفضل ما تمضيش توّا، وخلي شخص تثقي فيه أو مختص قانوني يراجعها معاك.",
+ sum:"Document illisible/incomplet : parties, objet et montant introuvables, page 2 manquante. Merci de la contacter avant toute signature.",alert:true}];
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let stream=null,snapUrl=null,busy=false,useCam=false;
+function toggleCam(){useCam=!useCam;$("camtog").textContent="Caméra réelle : "+(useCam?"activée":"désactivée")}
+function listenOnce(ms){return new Promise(res=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){res("");return}const r=new SR();r.lang="ar-TN";let t="";r.onresult=e=>{t=e.results[0][0].transcript};r.onend=()=>res(t);r.onerror=()=>res("");try{r.start();setTimeout(()=>{try{r.stop()}catch(e){}},ms)}catch(e){res("")}})}
+async function autoCapture(){for(let k=0;k<2;k++){await openCam();if(!stream)return;for(const n of ["3","2","1"]){$("count").textContent=n;await sleep(1000)}$("count").textContent="";snap();await speak("الصورة واضحة؟ إذا لا، قولي عاود.");setS("listening","👂","J’écoute…");const t=await listenOnce(4000);log("Réponse : "+t);if(!(t.includes("عاود")||t.trim()==="لا"))break;snapUrl=null}}
+function log(m){$("log").textContent=new Date().toLocaleTimeString()+" — "+m}
+function setS(cls,icon,txt){$("orb").className="orb "+cls;$("orb").textContent=icon;$("state").textContent=txt}
+function speak(t){return new Promise(res=>{$("say").textContent=t;setS("speaking","🔊","Je parle…");
+ if(!window.speechSynthesis){setTimeout(res,2500);return}
+ try{const u=new SpeechSynthesisUtterance(t);u.lang="ar-SA";u.rate=.85;u.onend=res;u.onerror=res;speechSynthesis.cancel();speechSynthesis.speak(u);setTimeout(res,12000)}catch(e){setTimeout(res,2500)}})}
+async function start(){
+ if(busy)return;busy=true;const d=DOCS[+$("scn").value];
+ $("result").innerHTML="";$("wa").innerHTML="";snapUrl=null;
+ setS("listening","👂","J’écoute…");$("sub").textContent="[SIMULATION] Activation vocale simulée";
+ $("say").textContent="يا حارس الورقة، جاوني بورقة ونحب نفهم شنوة فيها.";await sleep(2500);
+ await speak("مرحبا بيك. حطّي الورقة قدّامي على الحامل باش نقراها ونفسّرهالك.");
+ $("sub").textContent="Capture du document…";setS("listening","📄","Document en place");
+ if(useCam)await autoCapture();
+ if(snapUrl){$("docbox").innerHTML='<img src="'+snapUrl+'" style="width:100%;border-radius:10px"><div class="sub">Photo réelle capturée (contenu analysé = scénario fictif choisi)</div>'}
+ else $("docbox").innerHTML='<div class="paper'+(d.blur?" blur":"")+'" id="paper">'+d.text+'</div><div class="sub">Document fictif de démonstration</div>';
+ await sleep(1500);
+ setS("processing","🔍","J’analyse…");$("sub").textContent="[SIMULATION] Analyse simulée — aucun appel à OpenAI";await sleep(2200);
+ $("result").innerHTML='<div class="res '+d.status+'"><b class="s">'+d.label+'</b><span class="tag sim">Résultat simulé</span><ul>'+d.why.map(x=>"<li>"+x+"</li>").join("")+'</ul>'+(d.status==="ok"?'<div class="disc">« No Concern Detected » n’est pas une garantie de sécurité juridique.</div>':'')+'</div>';
+ await speak(d.say);
+ if(d.alert){await sleep(600);$("wa").innerHTML='<div class="wa"><span class="tag sim">Notification WhatsApp simulée (n8n + WhatsApp Business API non connectés)</span><br>⚠️ <b>Paper Guardian — alerte</b><br>Destinataire : Karim (membre de la famille autorisé)<br>'+d.sum+'<br><em>Recommandation : appelez-la et faites vérifier le document par un proche ou un juriste.</em>'+(snapUrl?'<br><img src="'+snapUrl+'">':'<br>📎 Photo du document (si partage autorisé)')+'</div>'}
+ setS("","🎙️","Prêt à écouter");$("say").textContent="يا حارس الورقة…";$("sub").textContent="Mot d’activation : « يا حارس الورقة »";busy=false}
+function micTest(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){$("sub").textContent="Reconnaissance vocale non disponible ici (essayez Chrome).";return}
+ const r=new SR();r.lang="ar-TN";setS("listening","👂","J’écoute…");
+ r.onresult=e=>{const t=e.results[0][0].transcript;$("say").textContent=t;log("Transcrit (navigateur) : "+t);if(/حارس|الورقة/.test(t))start();else $("sub").textContent="Mot d’activation non reconnu — transcription ci-dessus (≠ Whisper)"};
+ r.onerror=e=>{$("sub").textContent="Micro : "+e.error;setS("","🎙️","Prêt à écouter")};
+ r.onend=()=>{if(!busy)setS("","🎙️","Prêt à écouter")};try{r.start()}catch(e){}}
+async function openCam(){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+ $("docbox").innerHTML='<video id="v" autoplay playsinline muted></video>';$("v").srcObject=stream;log("Caméra active")}
+ catch(e){$("sub").textContent="Caméra refusée ou indisponible : "+e.name+" — autorisez-la dans le navigateur ou utilisez les documents fictifs."}}
+function snap(){const v=$("v");if(!v)return;const c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);
+ snapUrl=c.toDataURL("image/jpeg",.8);stream.getTracks().forEach(t=>t.stop());$("docbox").innerHTML='<img src="'+snapUrl+'" style="width:100%;border-radius:10px">'}
+function retake(){snapUrl=null;openCam()}
+</script>
+</body>
+</html>
